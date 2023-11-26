@@ -29,12 +29,26 @@ public class Level {
 	int alvosCount = 0;
 
 	private String level;
+	private File levelFile;
 
-	public Level(String level) {
+	/*public Level(String level) {
 		this.level = level;
 
+	}*/
+	
+	public Level(String levelFileName) {
+        this.levelFile = new File(levelFileName);
+        // Other existing initialization...
+    }
+	
+	public boolean fileExists() {
+        return levelFile.exists();
+    }
+	
+	public File getFileName() {
+		return levelFile;
 	}
-
+	
 	public String getName() {
 		String[] s = this.level.split("[.]");
 		return s[0];
@@ -51,15 +65,15 @@ public class Level {
 	public List<GameElement> getDoors() {
 		return portais;
 	}
-	
+
 	public List<Alvo> getAlvos() {
-	    return alvos;
+		return alvos;
 	}
 
 	public Point2D getEmpelhadoraPos() {
 		return empelhadoraPos;
 	}
-	
+
 	public Point2D[] getAlvosPos() {
 		return alvosPos;
 	}
@@ -80,6 +94,7 @@ public class Level {
 		return portaisPos;
 	}
 
+	
 	public void addFloor() { // prencher o fundo do mapa com "chão"
 		List<ImageTile> tileList = new ArrayList<>();
 		for (int x = 0; x != GameEngine.GRID_WIDTH; x++) {
@@ -93,7 +108,10 @@ public class Level {
 							// de acordo com o ficheiro lido
 
 		List<ImageTile> tileList = new ArrayList<>();
-		File file = new File(level);
+		
+		File file = levelFile;
+		
+		
 
 		try {
 			Scanner sc = new Scanner(file);
@@ -121,12 +139,12 @@ public class Level {
 						caixotesPos[caixotesCount] = position;
 						caixotesCount++;
 						break;
-					case 'X':					
-					    Alvo alvo = new Alvo(position);
-					    tileList.add(alvo);
-					    alvos.add(alvo);
-					    alvosPos[alvosCount] = position;
-					    alvosCount++;					    
+					case 'X':
+						Alvo alvo = new Alvo(position);
+						tileList.add(alvo);
+						alvos.add(alvo);
+						alvosPos[alvosCount] = position;
+						alvosCount++;
 						break;
 					case 'E':
 						empelhadoraPos = (position);
@@ -179,14 +197,34 @@ public class Level {
 		}
 
 	}
-	
-	public void fillAlvosPos() {
-	    for (int i = 0; i < alvos.size(); i++) {
-	        Object a = alvos.get(i);
 
-	        if (a instanceof Alvo)
-	            alvosPos[i] = ((Alvo) a).getPosition();
-	    }
+	public void fillAlvosPos() {
+		for (int i = 0; i < alvos.size(); i++) {
+			Object a = alvos.get(i);
+
+			if (a instanceof Alvo)
+				alvosPos[i] = ((Alvo) a).getPosition();
+		}
+	}
+
+	public boolean allAlvosFilled() {
+		for (Alvo alvo : alvos) {
+			if (!alvo.hasBox(caixotesPos)) {
+				return false; // If any Alvo doesn't have a box, return false
+			}
+		}
+		return true; // If all Alvos have a box, return true
+	}
+
+	public boolean checkForVictory() {
+		if (allAlvosFilled()) {
+			System.out.println("You win!");
+			return true;
+			// Add any additional logic you want for winning the game
+		} else {
+			return false;
+		}
+
 	}
 
 	public void updPortais() {
@@ -208,6 +246,12 @@ public class Level {
 		}
 		tileList.add(new Chao(oldPos));
 		// Add the updated caixote images
+
+		// Add the updated caixote images and alvo images
+		for (Alvo alvo : alvos) {
+			tileList.add(alvo);
+		}
+
 		for (Caixote caixote : caixotes) {
 			tileList.add(caixote);
 		}
@@ -228,7 +272,7 @@ public class Level {
 				tileList.add(new Chao(element.getPosition()));
 			}
 		}
-		
+
 		// Add the updated elements images
 		for (GameElement element : elements) {
 			tileList.add(element);

@@ -3,7 +3,7 @@ package pt.iscte.poo.sokobanstarter;
 import pt.iscte.poo.gui.ImageTile;
 import pt.iscte.poo.utils.Point2D;
 
-public class Alvo implements GameElement {
+public class Alvo implements GameElement, Moovable {
 
 	private Point2D Point2D;
 	
@@ -25,5 +25,9 @@ public class Alvo implements GameElement {
 	public int getLayer() {
 		return 0;
 	}
+	
+	public boolean hasBox(Point2D[] caixotesPos) {
+        return isObjectAtPosition(caixotesPos, getPosition());
+    }
 
 }

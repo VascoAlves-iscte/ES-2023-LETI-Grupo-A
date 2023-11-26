@@ -20,12 +20,14 @@ public class GameEngine implements Observer {
 	private ImageMatrixGUI gui = ImageMatrixGUI.getInstance();;
 	private Empilhadora empilhadora;
 	// Usa o caminho relativo à pasta "levels"
-	String levelFileName = "levels/level5.txt";
-	Level level = new Level(levelFileName);
 
-	private String levelAtual;
+
 	private List<Level> levels = new ArrayList<>();
-
+	private int currentLevelIndex = 0;
+	
+	Level level;
+	String levelAtual;
+	
 	public static GameEngine getInstance() {
 		if (INSTANCE == null)
 			return INSTANCE = new GameEngine();
@@ -36,14 +38,15 @@ public class GameEngine implements Observer {
 		gui.setSize(GRID_HEIGHT, GRID_WIDTH);
 		gui.registerObserver(this);
 		gui.go();
+		loadLevels();
 	}
 
+	
 	public void start() throws Exception {
-
-		levelAtual = level.getName();
-		levels.add(level);
-
-		level.addFloor();
+		
+		level = levels.get(currentLevelIndex);
+      
+        level.addFloor();
 		level.readFile(); // Leitura do ficheiro do nível e inicialização do mesmo
 
 		empilhadora = new Empilhadora(level.getEmpelhadoraPos());
@@ -52,8 +55,69 @@ public class GameEngine implements Observer {
 		gui.setStatusMessage(
 				"Sokoban Starter - Turns:" + turns + "            " + "Bateria:" + empilhadora.getBateria());
 		gui.update();
+		
 	}
+	
+	private void loadLevels() {
+        // Assuming levels are named as "level0.txt", "level1.txt", ...
+        String levelFileNamePattern = "levels/level%d.txt";
+        int levelIndex = 0;
 
+        while (true) {
+            String currentLevelFileName = String.format(levelFileNamePattern, levelIndex);
+            Level currentLevel = new Level(currentLevelFileName);
+
+            if (currentLevel.fileExists()) {
+                levels.add(currentLevel);
+                levelIndex++;
+            } else {
+                break;  // Exit the loop if the next level file doesn't exist
+            }
+        }
+        
+    }
+	
+	
+	
+	private void loadNextLevel() {
+        // Determine the index of the current level in the list
+        int currentLevelIndex = levels.indexOf(level);
+
+        // Check if there is a next level
+        if (currentLevelIndex < levels.size() - 1) {
+            // Increment the index to load the next level
+            currentLevelIndex++;
+
+            // Load the next level
+            level = levels.get(currentLevelIndex);
+            
+
+            // Clear the GUI and reset turns
+            gui.clearImages();
+            turns = 0;
+
+            // Add floor and read the new level
+            level.addFloor();
+            level.readFile();
+
+            // Reset the empilhadora position
+            empilhadora.changePos(level.getEmpelhadoraPos());
+            gui.addImage(empilhadora);
+
+            // Update the GUI status
+            gui.setStatusMessage(
+                    "Sokoban Starter - Turns:" + turns + "            " + "Bateria:" + empilhadora.getBateria());
+
+            // Update the GUI
+            gui.update();
+        } else {
+            // If there is no next level, you could handle it as a game completion
+            System.out.println("Congratulations! You have completed all levels.");
+        }
+    }
+
+		
+	
 	@Override
 	public void update(Observed source) {
 		int key = gui.keyPressed();
@@ -84,6 +148,10 @@ public class GameEngine implements Observer {
 
 		gui.setStatusMessage(
 				"Sokoban Starter - Turns:" + turns + "            " + "Bateria:" + empilhadora.getBateria());
+		
+		if(level.checkForVictory()==true) {
+			loadNextLevel();
+		}
 
 		gui.update();
 
