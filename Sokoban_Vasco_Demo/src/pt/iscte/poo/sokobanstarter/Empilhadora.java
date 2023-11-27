@@ -34,11 +34,11 @@ public class Empilhadora implements ImageTile, Moovable {
 	public int getLayer() {
 		return 2;
 	}
-	
+
 	public int getBateria() {
 		return bateria;
 	}
-	
+
 	public void toggleMoved() {// mudar o moved para false apos cada jogada
 		moved = false;
 	}
@@ -46,7 +46,11 @@ public class Empilhadora implements ImageTile, Moovable {
 	public void drainBateria() {
 		bateria--;
 	}
-	
+
+	public void resetBateria() {
+		bateria = 100;
+	}
+
 	public void useBateria() {
 		if (bateria + 50 <= 100) {
 			bateria = bateria + 50;
@@ -54,7 +58,8 @@ public class Empilhadora implements ImageTile, Moovable {
 			bateria = bateria + (100 - bateria);
 		}
 	}
-	public void move(int key, Point2D paredesPos[], Point2D caixotesPos[],Point2D alvosPos[], Level level) {
+
+	public void move(int key, Point2D paredesPos[], Point2D caixotesPos[], Point2D alvosPos[], Level level) {
 		Point2D nextPos = nextPos(key, position);
 		Direction d = Direction.directionFor(key);
 
@@ -74,31 +79,30 @@ public class Empilhadora implements ImageTile, Moovable {
 		}
 
 		if (canMove(paredesPos, nextPos)) {
-		    // Check if there's a box at the next position
-		    if (isObjectAtPosition(caixotesPos, nextPos)) {
-		        // Calculate the new position for the box
-		        Point2D boxNextPos = nextPos(key, nextPos);
+			// Check if there's a box at the next position
+			if (isObjectAtPosition(caixotesPos, nextPos)) {
+				// Calculate the new position for the box
+				Point2D boxNextPos = nextPos(key, nextPos);
 
-		        // Check if both empilhadora and the box can be moved to their new positions
-		        if (canMove(paredesPos, boxNextPos) && canMoveBox(paredesPos, caixotesPos, nextPos, boxNextPos)) {
-		            // Move the empilhadora to the next position
-		            this.position = nextPos;
+				// Check if both empilhadora and the box can be moved to their new positions
+				if (canMove(paredesPos, boxNextPos) && canMoveBox(paredesPos, caixotesPos, nextPos, boxNextPos)) {
+					// Move the empilhadora to the next position
+					this.position = nextPos;
 
-		            // Move the box to the new position
-		            level.moveBox(nextPos, boxNextPos);
-		            if(isObjectAtPosition(alvosPos,boxNextPos)) {
-		            	
-		            }
-		            moved = true;
-		        }
-		    } else {
-		        // If there's no box, move the empilhadora to the next position
-		        this.position = nextPos;
-		        moved = true;
-		    }
+					// Move the box to the new position
+					level.moveBox(nextPos, boxNextPos);
+					if (isObjectAtPosition(alvosPos, boxNextPos)) {
+
+					}
+					moved = true;
+				}
+			} else {
+				// If there's no box, move the empilhadora to the next position
+				this.position = nextPos;
+				moved = true;
+			}
 		}
 	}
-	
 
 	public void changePos(Point2D pos) {
 		position = pos;

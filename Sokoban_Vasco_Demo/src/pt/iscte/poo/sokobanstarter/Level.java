@@ -3,6 +3,7 @@ package pt.iscte.poo.sokobanstarter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
@@ -31,24 +32,21 @@ public class Level {
 	private String level;
 	private File levelFile;
 
-	/*public Level(String level) {
-		this.level = level;
+	
 
-	}*/
-	
 	public Level(String levelFileName) {
-        this.levelFile = new File(levelFileName);
-        // Other existing initialization...
-    }
-	
+		this.levelFile = new File(levelFileName);
+		// Other existing initialization...
+	}
+
 	public boolean fileExists() {
-        return levelFile.exists();
-    }
-	
+		return levelFile.exists();
+	}
+
 	public File getFileName() {
 		return levelFile;
 	}
-	
+
 	public String getName() {
 		String[] s = this.level.split("[.]");
 		return s[0];
@@ -94,7 +92,42 @@ public class Level {
 		return portaisPos;
 	}
 
+	public void clearLevel() {
+		// Clear arrays and reset counts
+		clearArrays();
+		clearLists();
+		resetCounts();
+		// Reset other level-specific attributes
+		empelhadoraPos = null; // Reset empilhadora position
+	}
+
+	private void clearArrays() {
+
+		Arrays.fill(paredesPos, null);
+		Arrays.fill(caixotesPos, null);
+		Arrays.fill(elementsPos, null);
+		Arrays.fill(alvosPos, null);
+		Arrays.fill(portaisPos, null);
+
+	}
 	
+	private void clearLists() {
+	    caixotes.clear();
+	    elements.clear();
+	    portais.clear();
+	    alvos.clear();
+	}
+
+	private void resetCounts() {
+		caixotesCount = 0;
+		paredesCount = 0;
+		elementsCount = 0;
+		alvosCount = 0;
+
+	}
+
+	
+
 	public void addFloor() { // prencher o fundo do mapa com "chão"
 		List<ImageTile> tileList = new ArrayList<>();
 		for (int x = 0; x != GameEngine.GRID_WIDTH; x++) {
@@ -108,10 +141,8 @@ public class Level {
 							// de acordo com o ficheiro lido
 
 		List<ImageTile> tileList = new ArrayList<>();
-		
+
 		File file = levelFile;
-		
-		
 
 		try {
 			Scanner sc = new Scanner(file);
@@ -218,7 +249,7 @@ public class Level {
 
 	public boolean checkForVictory() {
 		if (allAlvosFilled()) {
-			System.out.println("You win!");
+			
 			return true;
 			// Add any additional logic you want for winning the game
 		} else {
