@@ -1,2 +1,4 @@
-vascp,1,51
-vascp,0,13
+Here are your scores from this session Rafa!
+Level 2: 65
+Level 1: 49
+Level 0: 13

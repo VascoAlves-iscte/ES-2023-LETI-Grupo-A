@@ -41,10 +41,11 @@ public class GameEngine implements Observer {
 		gui.registerObserver(this);
 		gui.go();
 		loadLevels();
+		
 	}
 
 	public void start() throws Exception {
-
+		//tabelaPontuacoes.writeHighScoresToFile();
 		solicitarNomeJogador();
 
 		level = levels.get(currentLevelIndex);
@@ -179,6 +180,7 @@ public class GameEngine implements Observer {
 	@Override
 	public void update(Observed source) {
 		int key = gui.keyPressed();
+		
 
 		empilhadora.move(key, level.getParedesPos(), level.getCaixotesPos(), level.getAlvosPos(), level);
 
@@ -186,11 +188,13 @@ public class GameEngine implements Observer {
 			turns++;
 			empilhadora.drainBateria();
 			if (empilhadora.getBateria() == 0) {
-				int option = gui.setMessageWithOptions("Out of battery! What now...?");
+				int option = gui.setMessageWithOptions("Out of battery! What now...?","Restart", "Quit");
 				if(option==1) {
 					restartLevel();
 				}else {
-					tabelaPontuacoes.writeScoresToFile("scores");
+					tabelaPontuacoes.writeScoresToFile("scores", nomeJogador);
+					tabelaPontuacoes.updateAndWriteHighScores();
+					
 					System.exit(0);
 				}
 				//gui.setMessage("Out of battery! What now...?");
@@ -220,11 +224,9 @@ public class GameEngine implements Observer {
 				"Sokoban Starter - Turns:" + turns + "            " + "Bateria:" + empilhadora.getBateria());
 
 		if (level.checkForVictory()) {
-			System.out.println("You won level "+ currentLevelIndex + "with a score of "+ turns + "!");
+			System.out.println("You won level "+ currentLevelIndex + " with a score of "+ turns + "!");
 			// No final de cada nível, criar uma instância de Pontuacao
-			Pontuacao pontuacao = new Pontuacao(nomeJogador, turns, currentLevelIndex); // Supondo que 'turns' seja a
-																						// pontuação
-
+			Pontuacao pontuacao = new Pontuacao(nomeJogador, turns, currentLevelIndex); 
 			tabelaPontuacoes.adicionarPontuacao(pontuacao);
 			loadNextLevel();
 		}

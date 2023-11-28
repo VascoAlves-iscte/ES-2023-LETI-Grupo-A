@@ -345,15 +345,15 @@ public class ImageMatrixGUI extends Observed {
 		JOptionPane.showMessageDialog(panel, Message);
 	}
 
-	public int setMessageWithOptions(String message) { //extra
-		String[] options = { "Restart", "Quit" };
-		int choice = JOptionPane.showOptionDialog(panel, message, "Game Over", JOptionPane.YES_NO_OPTION,
+	public int setMessageWithOptions(String message, String button1,String button2 ) { //recebe uma mensagem a mostrar na caixa de texto e duas strings para os botões
+		String[] options = { button1, button2 };
+		int choice = JOptionPane.showOptionDialog(panel, message, "#Texto Custumizável que irá aparecer no topo da janela#", JOptionPane.YES_NO_OPTION,
 				JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
 
 		if (choice == JOptionPane.YES_OPTION) {
-			return 1;// restartLevel();
+			return 1;// associar o numero de rutorno a uma função ou método a ser executado
 		} else {
-			return 0;// System.exit(0);
+			return 0;
 		}
 	}
 

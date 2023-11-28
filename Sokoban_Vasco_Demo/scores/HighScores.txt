@@ -1,0 +1,17 @@
+HighScores:
+
+Level 0:
+:Pedro->3
+:Vasco->4
+:Rafa->13
+
+Level 1:
+:Antonio->49
+:Rafa->49
+:Pedro->98
+
+Level 2:
+:Zezoca->49
+:Rafa->65
+:Zezinho->98
+
