@@ -21,14 +21,21 @@ public class GameEngine implements Observer {
 	private ImageMatrixGUI gui = ImageMatrixGUI.getInstance();;
 	private Empilhadora empilhadora;
 
-
 	private List<Level> levels = new ArrayList<>();
-	private int currentLevelIndex = 0;
+	private int currentLevelIndex = 6;
 
 	Level level;
 	String levelAtual;
 	String nomeJogador;
 	TabelaPontuacoes tabelaPontuacoes = new TabelaPontuacoes();
+
+	public ImageMatrixGUI getGUI() {
+		return gui;
+	}
+
+	public Empilhadora getEmpilhadora() {
+		return empilhadora;
+	}
 
 	public static GameEngine getInstance() {
 		if (INSTANCE == null)
@@ -41,11 +48,11 @@ public class GameEngine implements Observer {
 		gui.registerObserver(this);
 		gui.go();
 		loadLevels();
-		
+
 	}
 
 	public void start() throws Exception {
-		//tabelaPontuacoes.writeHighScoresToFile();
+		// tabelaPontuacoes.writeHighScoresToFile();
 		solicitarNomeJogador();
 
 		level = levels.get(currentLevelIndex);
@@ -107,8 +114,6 @@ public class GameEngine implements Observer {
 		// Update the GUI
 		gui.update();
 
-		
-
 	}
 
 	private void displayBatteryOutMenu() {
@@ -168,6 +173,9 @@ public class GameEngine implements Observer {
 		} else {
 			// If there is no next level, you could handle it as a game completion
 			System.out.println("Congratulations! You have completed all levels.");
+			tabelaPontuacoes.writeScoresToFile("scores", nomeJogador);
+			tabelaPontuacoes.updateAndWriteHighScores();
+			System.exit(0);
 		}
 	}
 
@@ -180,25 +188,26 @@ public class GameEngine implements Observer {
 	@Override
 	public void update(Observed source) {
 		int key = gui.keyPressed();
-		
 
-		empilhadora.move(key, level.getParedesPos(), level.getCaixotesPos(), level.getAlvosPos(), level);
+		empilhadora.move(key, level);
 
-		if (empilhadora.moved == true) {// deteta se o heroi se mexeu (user jogou)
+		if (empilhadora.moved == true) {// deteta se a empilhadora se mexeu (user jogou)
 			turns++;
 			empilhadora.drainBateria();
+			level.fixBuracos();
+			
+			
 			if (empilhadora.getBateria() == 0) {
-				int option = gui.setMessageWithOptions("Out of battery! What now...?","Restart", "Quit");
-				if(option==1) {
+				int option = gui.setMessageWithOptions("Out of battery! What now...?", "Restart", "Quit");
+				if (option == 1) {
 					restartLevel();
-				}else {
+				} else {
 					tabelaPontuacoes.writeScoresToFile("scores", nomeJogador);
 					tabelaPontuacoes.updateAndWriteHighScores();
-					
 					System.exit(0);
 				}
-				//gui.setMessage("Out of battery! What now...?");
-				//displayBatteryOutMenu();
+				// gui.setMessage("Out of battery! What now...?");
+				// displayBatteryOutMenu();
 			}
 
 			empilhadora.toggleMoved();
@@ -208,12 +217,54 @@ public class GameEngine implements Observer {
 				for (int i = 0; i < level.getElements().size(); i++) {
 					Object a = level.getElements().get(i);
 
-					if (a instanceof Bateria) {
-						if (((Bateria) a).getPosition().equals(empilhadora.getPosition())) {
+					if (a instanceof Bateria && ((Bateria) a).getPosition().equals(empilhadora.getPosition())) {
+						empilhadora.useBateria();
+						((Bateria) a).setUsed();
+						level.updElements();
+					}
 
-							empilhadora.useBateria();
-							((Bateria) a).setUsed();
-							level.updElements();
+					if (a instanceof Buraco && ((Buraco) a).getPosition().equals(empilhadora.getPosition())) {
+						int option = gui.setMessageWithOptions("You fell! What now...?", "Restart", "Quit");
+						if (option == 1) {
+							restartLevel();
+						} else {
+							tabelaPontuacoes.writeScoresToFile("scores", nomeJogador);
+							tabelaPontuacoes.updateAndWriteHighScores();
+
+							System.exit(0);
+						}
+
+						// gui.setMessage("Out of battery! What now...?");
+						// displayBatteryOutMenu();
+
+					}
+
+					if (a instanceof Martelo && ((Martelo) a).getPosition().equals(empilhadora.getPosition())) {
+						empilhadora.toggleMartelo();
+						((Martelo) a).setUsed();
+						level.updElements();
+					}
+
+					if (a instanceof ParedeRachada
+							&& ((ParedeRachada) a).getPosition().equals(empilhadora.getPosition())
+							&& empilhadora.getMarteloState()) {
+
+						((ParedeRachada) a).setUsed();
+						level.updElements();
+					}
+
+				}
+			}
+
+			if (Arrays.asList(level.getPortaisPos()).contains(empilhadora.getPosition())) {
+				for (int i = 0; i < level.getPortais().size(); i++) {
+					Object a = level.getPortais().get(i);
+					Point2D posSaida = (((Teleporte) a).getTpSaida()).getPosition();
+
+					if (a instanceof Teleporte && ((Teleporte) a).getPosition().equals(empilhadora.getPosition())) {
+						if (!((Teleporte) a).isSomethingOnTop(posSaida, level)) {
+							empilhadora.changePos(posSaida);						
+							break;
 						}
 					}
 				}
@@ -224,18 +275,29 @@ public class GameEngine implements Observer {
 				"Sokoban Starter - Turns:" + turns + "            " + "Bateria:" + empilhadora.getBateria());
 
 		if (level.checkForVictory()) {
-			System.out.println("You won level "+ currentLevelIndex + " with a score of "+ turns + "!");
+			System.out.println("You won level " + currentLevelIndex + " with a score of " + turns + "!");
 			// No final de cada nível, criar uma instância de Pontuacao
-			Pontuacao pontuacao = new Pontuacao(nomeJogador, turns, currentLevelIndex); 
+			Pontuacao pontuacao = new Pontuacao(nomeJogador, turns, currentLevelIndex);
 			tabelaPontuacoes.adicionarPontuacao(pontuacao);
 			loadNextLevel();
 		}
 
 		gui.update();
 
+		if (level.notEnoughCaixotes() == true) {
+			int option = gui.setMessageWithOptions("Out of boxes! What now...?", "Restart", "Quit");
+			if (option == 1) {
+				restartLevel();
+			} else {
+				tabelaPontuacoes.writeScoresToFile("scores", nomeJogador);
+				tabelaPontuacoes.updateAndWriteHighScores();
+
+				System.exit(0);
+			}
+			// gui.setMessage("Out of battery! What now...?");
+			// displayBatteryOutMenu();
+		}
+
 	}
 
-	public ImageMatrixGUI getGUI() {
-		return gui;
-	}
 }

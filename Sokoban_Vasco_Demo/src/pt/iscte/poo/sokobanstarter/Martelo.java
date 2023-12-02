@@ -6,11 +6,12 @@ import pt.iscte.poo.utils.Point2D;
 public class Martelo implements GameElement {
 
 	private Point2D Point2D;
-	
-	public Martelo(Point2D Point2D){
+	private boolean used = false;
+
+	public Martelo(Point2D Point2D) {
 		this.Point2D = Point2D;
 	}
-	
+
 	@Override
 	public String getName() {
 		return "Martelo";
@@ -26,4 +27,12 @@ public class Martelo implements GameElement {
 		return 0;
 	}
 
+	// Getter and setter for 'used' field
+	public boolean isUsed() {
+		return used;
+	}
+
+	public void setUsed() {
+		this.used = true;
+	}
 }

@@ -1,19 +1,19 @@
 package pt.iscte.poo.sokobanstarter;
 
-import java.util.List;
-import java.util.Random;
+
 
 import pt.iscte.poo.gui.ImageTile;
 import pt.iscte.poo.utils.Direction;
 import pt.iscte.poo.utils.Point2D;
-import pt.iscte.poo.utils.Vector2D;
 
-public class Empilhadora implements ImageTile, Moovable {
+
+public class Empilhadora implements ImageTile, Positionable {
 
 	private Point2D position;
 	private String imageName;
 	public boolean moved;
-	private int bateria = 100;// bateria inicial da empilhadora
+	private int bateria = 100;
+	private boolean hasMartelo = false;
 
 	public Empilhadora(Point2D position) {
 		this.position = position;
@@ -39,8 +39,20 @@ public class Empilhadora implements ImageTile, Moovable {
 		return bateria;
 	}
 
+	public boolean getMarteloState() {
+		return hasMartelo;
+	}
+
+	public void setMarteloState(boolean hasMartelo) {
+		this.hasMartelo = hasMartelo;
+	}
+
 	public void toggleMoved() {// mudar o moved para false apos cada jogada
 		moved = false;
+	}
+
+	public void toggleMartelo() {
+		setMarteloState(true);
 	}
 
 	public void drainBateria() {
@@ -59,7 +71,7 @@ public class Empilhadora implements ImageTile, Moovable {
 		}
 	}
 
-	public void move(int key, Point2D paredesPos[], Point2D caixotesPos[], Point2D alvosPos[], Level level) {
+	public void move(int key, Level level) {
 		Point2D nextPos = nextPos(key, position);
 		Direction d = Direction.directionFor(key);
 
@@ -78,33 +90,70 @@ public class Empilhadora implements ImageTile, Moovable {
 			break;
 		}
 
-		if (canMove(paredesPos, nextPos)) {
+		if (canMove(nextPos, level)) {
 			// Check if there's a box at the next position
-			if (isObjectAtPosition(caixotesPos, nextPos)) {
+			if (isObjectAtPosition(level.getCaixotesPos(), nextPos)) {
 				// Calculate the new position for the box
-				Point2D boxNextPos = nextPos(key, nextPos);
+				Point2D caixoteNextPos = nextPos(key, nextPos);
+				
 
 				// Check if both empilhadora and the box can be moved to their new positions
-				if (canMove(paredesPos, boxNextPos) && canMoveBox(paredesPos, caixotesPos, nextPos, boxNextPos)) {
+				if (canMove(caixoteNextPos, level) && canMoveBoxPaletes(nextPos, caixoteNextPos, level)) {
+
+					if (isObjectAtPosition(level.getPortaisPos(), caixoteNextPos)) {
+						Caixote caixote = level.getCaixoteAtPosition(nextPos);
+						level.teleportObject(caixote,caixoteNextPos,key);
+						Point2D caixotePortalSaidaPos = nextPos(key, nextPos);
+					}
 					// Move the empilhadora to the next position
 					this.position = nextPos;
 
 					// Move the box to the new position
-					level.moveBox(nextPos, boxNextPos);
-					if (isObjectAtPosition(alvosPos, boxNextPos)) {
-
-					}
+					level.moveCaixote(nextPos, caixoteNextPos);
+					level.checkBuraco();
 					moved = true;
 				}
 			} else {
-				// If there's no box, move the empilhadora to the next position
-				this.position = nextPos;
-				moved = true;
+				if (isObjectAtPosition(level.getPaletesPos(), nextPos)) {
+					Palete paleteAtNextPos = level.getPaleteAtPosition(nextPos);
+					if (paleteAtNextPos != null && paleteAtNextPos.isPlaced()) {
+						// If there's a placed Palete, move through it
+						this.position = nextPos;
+						moved = true;
+					} else {
+						// Calculate the new position for the palete
+						Point2D paleteNextPos = nextPos(key, nextPos);
+						
+
+						// Check if both empilhadora and the palete can be moved to their new positions
+						if (canMove(paleteNextPos, level) && canMoveBoxPaletes(nextPos, paleteNextPos, level)) {
+
+							if (isObjectAtPosition(level.getPortaisPos(), paleteNextPos)) {
+								Palete palete = level.getPaleteAtPosition(nextPos);
+								level.teleportObject(palete,paleteNextPos,key);
+							}
+							// Move the empilhadora to the next position
+							this.position = nextPos;
+
+							// Move the box to the new position
+							level.movePalete(nextPos, paleteNextPos);
+							level.checkBuraco();
+							moved = true;
+						}
+					}
+				} else {
+					// If there's no box or palete, move the empilhadora to the next position
+					this.position = nextPos;
+					moved = true;
+				}
 			}
 		}
+
 	}
 
+	@Override
 	public void changePos(Point2D pos) {
 		position = pos;
 	}
+
 }

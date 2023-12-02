@@ -3,7 +3,7 @@ package pt.iscte.poo.sokobanstarter;
 import pt.iscte.poo.gui.ImageTile;
 import pt.iscte.poo.utils.Point2D;
 
-public class Caixote implements ImageTile, Moovable {
+public class Caixote implements ImageTile, Positionable {
 
 	private Point2D Point2D;
 	
@@ -26,8 +26,11 @@ public class Caixote implements ImageTile, Moovable {
 		return 0;
 	}
 	
+
 	public void changePos(Point2D pos) {
 		Point2D = pos;
 	}
+	
+	
 
 }
