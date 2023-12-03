@@ -8,10 +8,30 @@ Level 0:
 Level 1:
 :Antonio->49
 :Rafa->49
-:Pedro->98
+:->49
 
 Level 2:
 :Zezoca->49
+:->63
+:Zezinho->98
+
+Level 3:
+:Zezoca->49
+:Rafa->65
+:->69
+
+Level 4:
+:->34
+:Rafa->65
+:Zezinho->98
+
+Level 5:
+:Zezoca->49
+:->49
+:Zezinho->98
+
+Level 6:
+:->23
 :Rafa->65
 :Zezinho->98
 

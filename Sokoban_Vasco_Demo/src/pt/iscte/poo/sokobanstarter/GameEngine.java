@@ -22,7 +22,7 @@ public class GameEngine implements Observer {
 	private Empilhadora empilhadora;
 
 	private List<Level> levels = new ArrayList<>();
-	private int currentLevelIndex = 6;
+	private int currentLevelIndex = 0;
 
 	Level level;
 	String levelAtual;
