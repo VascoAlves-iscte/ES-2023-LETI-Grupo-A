@@ -23,7 +23,7 @@ public class Pontuacao implements Comparable<Pontuacao> {
 		return levelIndex;
 	}
 
-	// Método compareTo para ordenar as pontuações
+	
 	@Override
 	public int compareTo(Pontuacao outraPontuacao) {
 		return Integer.compare(this.pontos, outraPontuacao.pontos);

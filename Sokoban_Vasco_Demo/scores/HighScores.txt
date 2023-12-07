@@ -13,7 +13,7 @@ Level 1:
 Level 2:
 :Zezoca->49
 :->63
-:Zezinho->98
+:Vsacp->63
 
 Level 3:
 :Zezoca->49
@@ -22,16 +22,16 @@ Level 3:
 
 Level 4:
 :->34
-:Rafa->65
-:Zezinho->98
+:Vsacp->34
+:->34
 
 Level 5:
 :Zezoca->49
 :->49
-:Zezinho->98
+:Vsacp->53
 
 Level 6:
 :->23
-:Rafa->65
+:->25
 :Zezinho->98
 

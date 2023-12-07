@@ -1,8 +1,8 @@
 Here are your scores from this session !
-Level 3: 69
+Level 3: 73
 Level 2: 63
+Level 5: 57
 Level 1: 49
-Level 5: 49
 Level 4: 34
-Level 6: 23
+Level 6: 25
 Level 0: 13

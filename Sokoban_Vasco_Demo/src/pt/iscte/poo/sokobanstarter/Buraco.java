@@ -26,6 +26,7 @@ public class Buraco implements GameElement, Positionable {
 		return 0;
 	}
 
+	//verifica se o buraco tem um apalete na sua posicao
 	public boolean isFilled(Point2D paletesPos[]) {
 		if (isObjectAtPosition(paletesPos, position) == true) {
 			return true;

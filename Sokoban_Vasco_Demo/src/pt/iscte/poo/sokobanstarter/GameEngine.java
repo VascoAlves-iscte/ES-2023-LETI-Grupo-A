@@ -1,303 +1,272 @@
 package pt.iscte.poo.sokobanstarter;
 
-import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
 import pt.iscte.poo.gui.ImageMatrixGUI;
-import pt.iscte.poo.gui.ImageTile;
 import pt.iscte.poo.observer.Observed;
 import pt.iscte.poo.observer.Observer;
 import pt.iscte.poo.utils.Point2D;
 
+/**
+ * Classe que representa o motor do jogo Sokoban.
+ * Esta classe implementa o padrão Singleton e a interface Observer.
+ * E responsavel por gerir o estado do jogo, interações do jogador e logica do jogo.
+ */
+
 public class GameEngine implements Observer {
 
-	public static final int GRID_HEIGHT = 10;
-	public static final int GRID_WIDTH = 10;
-	private int turns;
-	private static GameEngine INSTANCE = null;
-	private ImageMatrixGUI gui = ImageMatrixGUI.getInstance();;
-	private Empilhadora empilhadora;
+    public static final int GRID_HEIGHT = 10;
+    public static final int GRID_WIDTH = 10;
 
-	private List<Level> levels = new ArrayList<>();
-	private int currentLevelIndex = 0;
+    private int turns;
+    private static GameEngine INSTANCE = null;
+    private ImageMatrixGUI gui = ImageMatrixGUI.getInstance();
+    private Empilhadora empilhadora;
 
-	Level level;
-	String levelAtual;
-	String nomeJogador;
-	TabelaPontuacoes tabelaPontuacoes = new TabelaPontuacoes();
+    private List<Level> levels = new ArrayList<>();
+    private int currentLevelIndex = 0;
 
-	public ImageMatrixGUI getGUI() {
+    private Level level;
+    private String nomeJogador;
+    private TabelaPontuacoes tabelaPontuacoes = new TabelaPontuacoes();
+
+    // Singleton pattern, make the constructor private
+    private GameEngine() {
+        gui.setSize(GRID_HEIGHT, GRID_WIDTH);
+        gui.registerObserver(this);
+        gui.go();
+        loadLevels();
+    }
+    
+    //Obtem a referencia para a interface grafica do jogo.
+    public ImageMatrixGUI getGUI() {
 		return gui;
 	}
+    
+    //Obtem a instancia da empilhadora do jogo.
+    public Empilhadora getEmpilhadora() {
+    	return empilhadora;
+    }
 
-	public Empilhadora getEmpilhadora() {
-		return empilhadora;
-	}
+    //Obtem a unica instancia do GameEngine (Singleton pattern).
+     
+    public static GameEngine getInstance() {
+        if (INSTANCE == null)
+            return INSTANCE = new GameEngine();
+        return INSTANCE;
+    }
 
-	public static GameEngine getInstance() {
-		if (INSTANCE == null)
-			return INSTANCE = new GameEngine();
-		return INSTANCE;
-	}
+    //Inicia o jogo.
+    //Exceção lançada se ocorrer um problema durante o inicio do jogo.
+    public void start() throws Exception {
 
-	private GameEngine() {
-		gui.setSize(GRID_HEIGHT, GRID_WIDTH);
-		gui.registerObserver(this);
-		gui.go();
-		loadLevels();
+        solicitarNomeJogador();
 
-	}
+        level = levels.get(currentLevelIndex);
 
-	public void start() throws Exception {
-		// tabelaPontuacoes.writeHighScoresToFile();
-		solicitarNomeJogador();
+        level.addFloor();
+        level.readFile();
 
-		level = levels.get(currentLevelIndex);
+        empilhadora = new Empilhadora(level.getEmpelhadoraPos());
+        gui.addImage(empilhadora);
 
-		level.addFloor();
-		level.readFile(); // Leitura do ficheiro do nível e inicialização do mesmo
+        gui.setStatusMessage("Sokoban Starter - Turns:" + turns + "            " + "Bateria:" + empilhadora.getBateria());
+        gui.update();
+    }
 
-		empilhadora = new Empilhadora(level.getEmpelhadoraPos());
-		gui.addImage(empilhadora);
+    //carregar os niveis a partir do ficheiro levels
+    private void loadLevels() {
+        String levelFileNamePattern = "levels/level%d.txt";
+        int levelIndex = 0;
 
-		gui.setStatusMessage(
-				"Sokoban Starter - Turns:" + turns + "            " + "Bateria:" + empilhadora.getBateria());
-		gui.update();
+        while (true) {
+            String currentLevelFileName = String.format(levelFileNamePattern, levelIndex);
+            Level currentLevel = new Level(currentLevelFileName);
 
-	}
+            if (currentLevel.fileExists()) {
+                levels.add(currentLevel);
+                levelIndex++;
+            } else {
+                break;
+            }
+        }
+    }
 
-	private void loadLevels() {
-		// Assuming levels are named as "level0.txt", "level1.txt", ...
-		String levelFileNamePattern = "levels/level%d.txt";
-		int levelIndex = 0;
+    // Reinicia o nivel atual
+    private void restartLevel() {
+        level = levels.get(currentLevelIndex);
 
-		while (true) {
-			String currentLevelFileName = String.format(levelFileNamePattern, levelIndex);
-			Level currentLevel = new Level(currentLevelFileName);
+        level.clearLevel();
 
-			if (currentLevel.fileExists()) {
-				levels.add(currentLevel);
-				levelIndex++;
-			} else {
-				break; // Exit the loop if the next level file doesn't exist
-			}
-		}
+        gui.clearImages();
+        turns = 0;
 
-	}
+        level.addFloor();
+        level.readFile();
 
-	private void restartLevel() {
+        empilhadora.changePos(level.getEmpelhadoraPos());
+        gui.addImage(empilhadora);
+        empilhadora.resetBateria();
 
-		level = levels.get(currentLevelIndex);
+        gui.setStatusMessage("Sokoban Starter - Turns:" + turns + "            " + "Bateria:" + empilhadora.getBateria());
+        gui.update();
+    }
 
-		level.clearLevel();
+    //exibir o menu de reinicio ou saida
+    private void displayMenu() {
+        Scanner scanner = new Scanner(System.in);
 
-		// Clear the GUI and reset turns
-		gui.clearImages();
-		turns = 0;
+        System.out.println("What do you want to do ?");
+        System.out.println("1. Restart Level");
+        System.out.println("2. Quit");
 
-		// Add floor and read the new level
-		level.addFloor();
-		level.readFile();
+        System.out.print("Choose an option: ");
+        int choice = scanner.nextInt();
 
-		// Reset the empilhadora position
-		empilhadora.changePos(level.getEmpelhadoraPos());
-		gui.addImage(empilhadora);
-		empilhadora.resetBateria();
+        switch (choice) {
+            case 1:
+                restartLevel();
+                break;
+            case 2:
+                System.out.println("Quitting the game and saving the Scores. Goodbye!");
+                tabelaPontuacoes.writeScoresToFile(nomeJogador);
+                tabelaPontuacoes.updateAndWriteHighScores();
+                System.exit(0);
+                break;
+            default:
+                System.out.println("Invalid choice. Please enter 1 or 2.");
+                displayMenu();
+        }
+    }
 
-		// Update the GUI status
-		gui.setStatusMessage(
-				"Sokoban Starter - Turns:" + turns + "            " + "Bateria:" + empilhadora.getBateria());
+    // carrega o proximo nivel
+    private void loadNextLevel() {
+        if (currentLevelIndex < levels.size() - 1) {
+            currentLevelIndex++;
+            level = levels.get(currentLevelIndex);
 
-		// Update the GUI
-		gui.update();
+            gui.clearImages();
+            turns = 0;
 
-	}
+            level.addFloor();
+            level.readFile();
 
-	private void displayBatteryOutMenu() {
-		Scanner scanner = new Scanner(System.in);
+            empilhadora.changePos(level.getEmpelhadoraPos());
+            gui.addImage(empilhadora);
+            empilhadora.resetBateria();
 
-		System.out.println("Out of battery! What do you want to do?");
-		System.out.println("1. Restart Level");
-		System.out.println("2. Quit");
+            gui.setStatusMessage("Sokoban Starter - Turns:" + turns + "            " + "Bateria:" + empilhadora.getBateria());
+            gui.update();
+        } else {
+            System.out.println("Congratulations! You have completed all levels.");
+            tabelaPontuacoes.writeScoresToFile(nomeJogador);
+            tabelaPontuacoes.updateAndWriteHighScores();
+            System.exit(0);
+        }
+    }
 
-		System.out.print("Choose an option: ");
-		int choice = scanner.nextInt();
 
-		switch (choice) {
-		case 1:
-			restartLevel();
-			break;
-		case 2:
-			System.out.println("Quitting the game. Goodbye!");
-			System.exit(0);
-			break;
-		default:
-			System.out.println("Invalid choice. Please enter 1 or 2.");
-			displayBatteryOutMenu(); // Ask again if the choice is invalid
-		}
-	}
+    private void solicitarNomeJogador() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Digite o nome do jogador: ");
+        nomeJogador = scanner.nextLine();
+    }
 
-	private void loadNextLevel() {
+    // atualiza o jogo com base nas interações do jogador
+    @Override
+    public void update(Observed source) {
+        int key = gui.keyPressed();
 
-		// Check if there is a next level
-		if (currentLevelIndex < levels.size() - 1) {
-			// Increment the index to load the next level
+        empilhadora.move(key, level);
 
-			currentLevelIndex++;
+        if (empilhadora.moved) {
+            turns++;
+            empilhadora.drainBateria();
+            level.fixBuracos();
 
-			// Load the next level
-			level = levels.get(currentLevelIndex);
+            if (empilhadora.getBateria() == 0) {
+                gui.setMessage("Out of battery! What now...?");
+                displayMenu();
+            }
 
-			// Clear the GUI and reset turns
-			gui.clearImages();
-			turns = 0;
+            empilhadora.toggleMoved(false);
 
-			// Add floor and read the new level
-			level.addFloor();
-			level.readFile();
+            handleElementInteractions();
 
-			// Reset the empilhadora position
-			empilhadora.changePos(level.getEmpelhadoraPos());
-			gui.addImage(empilhadora);
-			empilhadora.resetBateria();
+            handleTeleportation();
 
-			// Update the GUI status
-			gui.setStatusMessage(
-					"Sokoban Starter - Turns:" + turns + "            " + "Bateria:" + empilhadora.getBateria());
+            gui.setStatusMessage("Sokoban Starter - Turns:" + turns + "            " + "Bateria:" + empilhadora.getBateria());
+            gui.update();
 
-			// Update the GUI
-			gui.update();
-		} else {
-			// If there is no next level, you could handle it as a game completion
-			System.out.println("Congratulations! You have completed all levels.");
-			tabelaPontuacoes.writeScoresToFile("scores", nomeJogador);
-			tabelaPontuacoes.updateAndWriteHighScores();
-			System.exit(0);
-		}
-	}
+            handleGameOutcome();
+        }
+    }
 
-	private void solicitarNomeJogador() {
-		Scanner scanner = new Scanner(System.in);
-		System.out.print("Digite o nome do jogador: ");
-		nomeJogador = scanner.nextLine();
-	}
+    // Handle interactions with game elements (Bateria, Buraco, Martelo, ParedeRachada)
+    private void handleElementInteractions() {
+        if (Arrays.asList(level.getElementsPos()).contains(empilhadora.getPosition())) {
+            for (int i = 0; i < level.getElements().size(); i++) {
+                Object a = level.getElements().get(i);
 
-	@Override
-	public void update(Observed source) {
-		int key = gui.keyPressed();
+                if (a instanceof Bateria && ((Bateria) a).getPosition().equals(empilhadora.getPosition())) {
+                    empilhadora.useBateria();
+                    ((Bateria) a).setUsed();
+                    level.updElements();
+                }
 
-		empilhadora.move(key, level);
+                if (a instanceof Buraco && ((Buraco) a).getPosition().equals(empilhadora.getPosition())) {
+                    gui.setMessage("You fell! What now...?");
+                    displayMenu();
+                }
 
-		if (empilhadora.moved == true) {// deteta se a empilhadora se mexeu (user jogou)
-			turns++;
-			empilhadora.drainBateria();
-			level.fixBuracos();
-			
-			
-			if (empilhadora.getBateria() == 0) {
-				int option = gui.setMessageWithOptions("Out of battery! What now...?", "Restart", "Quit");
-				if (option == 1) {
-					restartLevel();
-				} else {
-					tabelaPontuacoes.writeScoresToFile("scores", nomeJogador);
-					tabelaPontuacoes.updateAndWriteHighScores();
-					System.exit(0);
-				}
-				// gui.setMessage("Out of battery! What now...?");
-				// displayBatteryOutMenu();
-			}
+                if (a instanceof Martelo && ((Martelo) a).getPosition().equals(empilhadora.getPosition())) {
+                    empilhadora.toggleMartelo();
+                    ((Martelo) a).setUsed();
+                    level.updElements();
+                }
 
-			empilhadora.toggleMoved();
+                if (a instanceof ParedeRachada
+                        && ((ParedeRachada) a).getPosition().equals(empilhadora.getPosition())
+                        && empilhadora.getMarteloState()) {
+                    ((ParedeRachada) a).setUsed();
+                    level.updElements();
+                }
+            }
+        }
+    }
 
-			if (Arrays.asList(level.getElementsPos()).contains(empilhadora.getPosition())) {
+    // Handle teleportation logic
+    private void handleTeleportation() {
+        if (Arrays.asList(level.getPortaisPos()).contains(empilhadora.getPosition())) {
+            for (int i = 0; i < level.getPortais().size(); i++) {
+                Object a = level.getPortais().get(i);
+                Point2D posSaida = (((Teleporte) a).getTpSaida()).getPosition();
 
-				for (int i = 0; i < level.getElements().size(); i++) {
-					Object a = level.getElements().get(i);
+                if (a instanceof Teleporte && ((Teleporte) a).getPosition().equals(empilhadora.getPosition())) {
+                    if (!((Teleporte) a).isSomethingOnTop(posSaida, level)) {
+                        empilhadora.changePos(posSaida);
+                        break;
+                    }
+                }
+            }
+        }
+    }
 
-					if (a instanceof Bateria && ((Bateria) a).getPosition().equals(empilhadora.getPosition())) {
-						empilhadora.useBateria();
-						((Bateria) a).setUsed();
-						level.updElements();
-					}
+    // Handle the outcome of the game (victory or not enough caixotes)
+    private void handleGameOutcome() {
+        if (level.allAlvosFilled()) {
+            System.out.println("You won level " + currentLevelIndex + " with a score of " + turns + "!");
+            Pontuacao pontuacao = new Pontuacao(nomeJogador, turns, currentLevelIndex);
+            tabelaPontuacoes.adicionarPontuacao(pontuacao);
+            loadNextLevel();
+        }
 
-					if (a instanceof Buraco && ((Buraco) a).getPosition().equals(empilhadora.getPosition())) {
-						int option = gui.setMessageWithOptions("You fell! What now...?", "Restart", "Quit");
-						if (option == 1) {
-							restartLevel();
-						} else {
-							tabelaPontuacoes.writeScoresToFile("scores", nomeJogador);
-							tabelaPontuacoes.updateAndWriteHighScores();
-
-							System.exit(0);
-						}
-
-						// gui.setMessage("Out of battery! What now...?");
-						// displayBatteryOutMenu();
-
-					}
-
-					if (a instanceof Martelo && ((Martelo) a).getPosition().equals(empilhadora.getPosition())) {
-						empilhadora.toggleMartelo();
-						((Martelo) a).setUsed();
-						level.updElements();
-					}
-
-					if (a instanceof ParedeRachada
-							&& ((ParedeRachada) a).getPosition().equals(empilhadora.getPosition())
-							&& empilhadora.getMarteloState()) {
-
-						((ParedeRachada) a).setUsed();
-						level.updElements();
-					}
-
-				}
-			}
-
-			if (Arrays.asList(level.getPortaisPos()).contains(empilhadora.getPosition())) {
-				for (int i = 0; i < level.getPortais().size(); i++) {
-					Object a = level.getPortais().get(i);
-					Point2D posSaida = (((Teleporte) a).getTpSaida()).getPosition();
-
-					if (a instanceof Teleporte && ((Teleporte) a).getPosition().equals(empilhadora.getPosition())) {
-						if (!((Teleporte) a).isSomethingOnTop(posSaida, level)) {
-							empilhadora.changePos(posSaida);						
-							break;
-						}
-					}
-				}
-			}
-		}
-
-		gui.setStatusMessage(
-				"Sokoban Starter - Turns:" + turns + "            " + "Bateria:" + empilhadora.getBateria());
-
-		if (level.checkForVictory()) {
-			System.out.println("You won level " + currentLevelIndex + " with a score of " + turns + "!");
-			// No final de cada nível, criar uma instância de Pontuacao
-			Pontuacao pontuacao = new Pontuacao(nomeJogador, turns, currentLevelIndex);
-			tabelaPontuacoes.adicionarPontuacao(pontuacao);
-			loadNextLevel();
-		}
-
-		gui.update();
-
-		if (level.notEnoughCaixotes() == true) {
-			int option = gui.setMessageWithOptions("Out of boxes! What now...?", "Restart", "Quit");
-			if (option == 1) {
-				restartLevel();
-			} else {
-				tabelaPontuacoes.writeScoresToFile("scores", nomeJogador);
-				tabelaPontuacoes.updateAndWriteHighScores();
-
-				System.exit(0);
-			}
-			// gui.setMessage("Out of battery! What now...?");
-			// displayBatteryOutMenu();
-		}
-
-	}
-
+        if (level.notEnoughCaixotes()) {
+            gui.setMessage("Out of boxes! What now...?");
+            displayMenu();
+        }
+    }
 }

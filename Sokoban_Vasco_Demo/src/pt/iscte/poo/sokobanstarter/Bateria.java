@@ -28,8 +28,6 @@ public class Bateria implements GameElement {
 	}
 
 	
-
-    // Getter and setter for 'used' field
     public boolean isUsed() {
         return used;
     }

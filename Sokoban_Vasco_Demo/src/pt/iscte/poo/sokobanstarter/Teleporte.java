@@ -35,8 +35,6 @@ public class Teleporte implements GameElement, Positionable  {
         this.tpSaida = tpSaida;
     }
 
-
-    
     public boolean isSomethingOnTop(Point2D position, Level level) {
         for (GameElement element : level.getElements()) {
             if (!element.equals(this) && element.getPosition().equals(position)) {

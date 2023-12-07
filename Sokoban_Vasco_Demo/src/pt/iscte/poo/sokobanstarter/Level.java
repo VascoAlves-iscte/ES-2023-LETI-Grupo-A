@@ -11,7 +11,8 @@ import pt.iscte.poo.utils.Direction;
 import pt.iscte.poo.gui.ImageTile;
 import pt.iscte.poo.utils.Point2D;
 
-public class Level{
+//classe que representa um nivel no jogo
+public class Level {
 
 	private List<Caixote> caixotes = new ArrayList<>();// lista de caixotes
 	private List<GameElement> elements = new ArrayList<>();// lista de elementos
@@ -26,33 +27,37 @@ public class Level{
 	private Point2D portaisPos[] = new Point2D[2];// array com posição das portas
 	private Point2D empelhadoraPos;
 
+	// contadores para garantir o correcto posicinamento dos objetos nos arrays das
+	// posicoes
 	int caixotesCount = 0;
 	int paredesCount = 0;
 	int elementsCount = 0;
 	int alvosCount = 0;
 	int paletesCount = 0;
 	int portaisCount = 0;
-	Point2D oldPos;
 
-	private String level;
+	// posicao usada nos updates de posicao para guardar a posicao antiga do objeto
+	// a ser movido
+	private Point2D oldPos;
+
+	// ficheiro com o nivel a ser usado
 	private File levelFile;
 
+	// constructor para a classe Level, recebe o nome do ficheiro a ser carregado
 	public Level(String levelFileName) {
 		this.levelFile = new File(levelFileName);
-		// Other existing initialization...
 	}
 
+	// verifica se o ficheiro do nivel existe
 	public boolean fileExists() {
 		return levelFile.exists();
 	}
 
+	// getters e setters para os varios elementos da classe (listas, arrays de
+	// posicoes etc)
+
 	public File getFileName() {
 		return levelFile;
-	}
-
-	public String getName() {
-		String[] s = this.level.split("[.]");
-		return s[0];
 	}
 
 	public List<Caixote> getCaixotes() {
@@ -103,15 +108,16 @@ public class Level{
 		return portaisPos;
 	}
 
+	// "limpa" o nivel, esvaziando todas as listas, arrays, contadores de forma a
+	// reniciar o nivel
 	public void clearLevel() {
-		// Clear arrays and reset counts
 		clearArrays();
 		clearLists();
 		resetCounts();
-
-		empelhadoraPos = null; // Reset empilhadora position
+		empelhadoraPos = null;
 	}
 
+	// reset dos arrays de posicao
 	private void clearArrays() {
 		Arrays.fill(paredesPos, null);
 		Arrays.fill(caixotesPos, null);
@@ -121,6 +127,7 @@ public class Level{
 		Arrays.fill(paletesPos, null);
 	}
 
+	// reset das listas de objetos
 	private void clearLists() {
 		caixotes.clear();
 		elements.clear();
@@ -129,6 +136,7 @@ public class Level{
 		paletes.clear();
 	}
 
+	// reset dos contadores
 	private void resetCounts() {
 		caixotesCount = 0;
 		paredesCount = 0;
@@ -138,7 +146,8 @@ public class Level{
 		portaisCount = 0;
 	}
 
-	public void addFloor() { // prencher o fundo do mapa com "chão"
+	// prencher o fundo do mapa com "chao"
+	public void addFloor() {
 		List<ImageTile> tileList = new ArrayList<>();
 		for (int x = 0; x != GameEngine.GRID_WIDTH; x++) {
 			for (int y = 0; y != GameEngine.GRID_HEIGHT; y++)
@@ -147,8 +156,9 @@ public class Level{
 		GameEngine.getInstance().getGUI().addImages(tileList);
 	}
 
-	public void readFile() {// adiciona as paredes, inimigos, items atc ao mapa
-							// de acordo com o ficheiro lido
+	// adiciona as paredes, inimigos, items atc ao mapa de acordo com o ficheiro
+	// lido
+	public void readFile() {
 
 		List<ImageTile> tileList = new ArrayList<>();
 
@@ -249,28 +259,30 @@ public class Level{
 
 		GameEngine.getInstance().getGUI().addImages(tileList);
 	}
-	
+
+	// conecta os pares de portais dando a posicao de cada um como a saida do outro
 	public void setSaidasPortais() {
 		if (portais.size() == 2) {
-            Teleporte portalEntrada = portais.get(0);
-            Teleporte portalSaida = portais.get(1);
+			Teleporte portalEntrada = portais.get(0);
+			Teleporte portalSaida = portais.get(1);
 
-            // Set the exit teleporter for the entrance teleporter
-            portalEntrada.setTpSaida(portalSaida); 
-            // Set the entrance teleporter for the exit teleporter
-            portalSaida.setTpSaida(portalEntrada);
-        }
+			portalEntrada.setTpSaida(portalSaida);
+			portalSaida.setTpSaida(portalEntrada);
+		}
 	}
 
+	// verifica se todos os alvos estao preenchidos com caixotes
 	public boolean allAlvosFilled() {
 		for (Alvo alvo : alvos) {
 			if (!alvo.hasBox(caixotesPos)) {
-				return false; // If any Alvo doesn't have a box, return false
+				return false;
 			}
 		}
-		return true; // If all Alvos have a box, return true
+		return true;
 	}
 
+	// Verifica se algum caixote esta na posicao de um boraco e remove o mesmo se
+	// verificar
 	public void checkBuraco() {
 		List<Caixote> caixotesToRemove = new ArrayList<>();
 
@@ -282,12 +294,12 @@ public class Level{
 				}
 			}
 		}
-
-		// Remove caixotes outside the loop to avoid concurrent modification
 		caixotes.removeAll(caixotesToRemove);
 		updCaixotesPaletes();
 	}
 
+	// verifica se alguma palete esta na posicao de um buraco.Se se verificar este
+	// buraco passa a estar "fixed" por um palete que o torna agora transponivel
 	public void fixBuracos() {
 		List<ImageTile> tileList = new ArrayList<>();
 
@@ -297,39 +309,29 @@ public class Level{
 			if (element instanceof Buraco) {
 				Buraco buraco = (Buraco) element;
 				if (buraco.isFilled(paletesPos)) {
-					iterator.remove(); // Remove the Buraco from the list of elements
+					iterator.remove(); // remove o Buraco da lista de elementos
 					tileList.add(new Palete(buraco.getPosition()));
-					// Set the placed property of the Palete to true
+					// muda o campo "placed" da palete que ocupou o buraco
 					Point2D paletePosition = buraco.getPosition();
 					Palete palete = getPaleteAtPosition(paletePosition);
 					if (palete != null) {
 						palete.togglePlaced();
 					}
 				}
-
 			} else {
 				tileList.add(element);
 			}
 		}
-
 		GameEngine.getInstance().getGUI().addImages(tileList);
 	}
 
-	public boolean checkForVictory() {
-		if (allAlvosFilled()) {
-
-			return true;
-
-		} else {
-			return false;
-		}
-
-	}
-
+	// verifica se existem caixotes suficientes para todos os alvos
 	public boolean notEnoughCaixotes() {
 		return caixotes.size() < alvos.size();
 	}
 
+	// metodos que atualizam as imagens dos objetos de acordo com o estado atual do
+	// jogo
 	public void updPortais() {
 		List<ImageTile> tileList = new ArrayList<>();
 		for (int j = 0; j < portais.size(); j++) {
@@ -340,17 +342,17 @@ public class Level{
 
 	public void updCaixotesPaletes() {
 		List<ImageTile> tileList = new ArrayList<>();
-		// Remove previous caixote images
+		// remove imagens de caixotes anteriormente colocados
 		for (int i = 0; i < caixotes.size(); i++) {
 			Caixote caixote = caixotes.get(i);
 			tileList.add(new Chao(caixote.getPosition()));
 		}
 
-		// Remove previous paletes images
+		// remove imagens de paletes anteriormente colocadas
 		for (int i = 0; i < paletes.size(); i++) {
 			Palete palete = paletes.get(i);
 			if (palete.isPlaced()) {
-				tileList.add(new Buraco(palete.getPosition())); //por buraco com palete em cima ("pacthed")
+				tileList.add(new Buraco(palete.getPosition())); // por buraco com palete em cima ("pacthed")
 				tileList.add(new Palete(palete.getPosition()));
 			} else {
 				tileList.add(new Chao(palete.getPosition()));
@@ -359,17 +361,13 @@ public class Level{
 
 		tileList.add(new Chao(oldPos));
 
-		// Add the updated caixote, alvo and palete images
+		// adiciona as novas imagens dos caixotes, alvos, paletes e outros elementos
 		for (Alvo alvo : alvos) {
 			tileList.add(alvo);
 		}
 
 		for (Palete palete : paletes) {
 			tileList.add(palete);
-		}
-
-		for (GameElement element : elements) {
-			tileList.add(element);
 		}
 
 		for (Caixote caixote : caixotes) {
@@ -382,31 +380,32 @@ public class Level{
 	public void updElements() {
 		List<ImageTile> tileList = new ArrayList<>();
 
-		// Remove previous elements images and update arrays
+		// remove imagens antigas dos elementos que foram "usados" e atualiaza o array
+		// das posicoes
 		Iterator<GameElement> iterator = elements.iterator();
 		while (iterator.hasNext()) {
 			GameElement element = iterator.next();
 
 			if (element instanceof Bateria && ((Bateria) element).isUsed()) {
-				iterator.remove(); // Remove the used Bateria from the list
-				updateElementArray(element.getPosition()); // Update the array of positions
+				iterator.remove(); // Remove baterias usadas da lista
+				updateElementArray(element.getPosition());
 				tileList.add(new Chao(element.getPosition()));
 			}
 
 			if (element instanceof Martelo && ((Martelo) element).isUsed()) {
-				iterator.remove(); // Remove the used Martelo from the list
-				updateElementArray(element.getPosition()); // Update the array of positions
+				iterator.remove(); // Remove martelo se tiver sido apanhado
+				updateElementArray(element.getPosition());
 				tileList.add(new Chao(element.getPosition()));
 			}
 
 			if (element instanceof ParedeRachada && ((ParedeRachada) element).isUsed()) {
-				iterator.remove(); // Remove the used ParedeRachada from the list
-				updateElementArray(element.getPosition()); // Update the array of positions
+				iterator.remove(); // Remove paredes rachadas que tenham sido partidas pela empilhadora
+				updateElementArray(element.getPosition());
 				tileList.add(new Chao(element.getPosition()));
 			}
 		}
 
-		// Add the updated elements images
+		// adiciona todos os elemntos do jogo que se manteem
 		for (GameElement element : elements) {
 			tileList.add(element);
 
@@ -415,17 +414,18 @@ public class Level{
 		GameEngine.getInstance().getGUI().addImages(tileList);
 	}
 
+	// tira uma posicao dada do array de posicoes dos elementos
 	private void updateElementArray(Point2D position) {
 		for (int i = 0; i < elementsPos.length; i++) {
 			if (position.equals(elementsPos[i])) {
-				elementsPos[i] = null; // Set the corresponding position to null
+				elementsPos[i] = null;
 				break;
 			}
 		}
 	}
 
+	// atualiza o array de posicoes dos caixotes com as novas posicoes
 	public void moveCaixote(Point2D currentPosition, Point2D newPosition) {
-		// Update the position of the Caixote objects
 		for (int i = 0; i < caixotes.size(); i++) {
 			if (currentPosition.equals(caixotes.get(i).getPosition())) {
 				oldPos = currentPosition;
@@ -433,14 +433,12 @@ public class Level{
 				caixotesPos[i] = newPosition;
 				break;
 			}
-
 		}
 		updCaixotesPaletes();
-
 	}
 
+	// atualiza o array de posicoes das paletes com as novas posicoes
 	public void movePalete(Point2D currentPosition, Point2D newPosition) {
-		// Update the position of the Palete objects
 		for (int i = 0; i < paletes.size(); i++) {
 			if (currentPosition.equals(paletes.get(i).getPosition())) {
 				oldPos = currentPosition;
@@ -448,41 +446,41 @@ public class Level{
 				paletesPos[i] = newPosition;
 				break;
 			}
-
 		}
 		updCaixotesPaletes();
-
 	}
 
+	// retorna o objecto palete numa dada posicao
 	public Palete getPaleteAtPosition(Point2D position) {
 		for (Palete palete : paletes) {
 			if (palete.getPosition().equals(position)) {
 				return palete;
 			}
 		}
-		return null; // No Palete found at the specified position
+		return null;
 	}
-	
-	
-	
+
+	// retorna o objecto caixote numa dada posicao
 	public Caixote getCaixoteAtPosition(Point2D position) {
 		for (Caixote caixote : caixotes) {
 			if (caixote.getPosition().equals(position)) {
 				return caixote;
 			}
 		}
-		return null; // No Palete found at the specified position
+		return null;
 	}
-	
+
+	// retorna o objecto Teleporte numa dada posicao
 	public Teleporte getPortalAtPosition(Point2D position) {
 		for (Teleporte portal : portais) {
 			if (portal.getPosition().equals(position)) {
 				return portal;
 			}
 		}
-		return null; // No Palete found at the specified position
+		return null;
 	}
 
+	// retorna o objecto martelo numa dada posicao
 	public Martelo findMarteloAtPosition(List<GameElement> elements, Point2D pos) {
 		for (GameElement element : elements) {
 			if (element instanceof Martelo) {
@@ -495,33 +493,29 @@ public class Level{
 		return null;
 	}
 
-	
-
+	// Muda a posicao de um objeto "teleportavel" (caixotes e paletes) de acordo com
+	// a direcao com que entra no portal de entrada e as coordenadas do portal de saida
 	public void teleportObject(Positionable teleportableObject, Point2D portalEntrada, int key) {
-	    // Check if the object is on a teleporter
-		
-		
-	    if (Arrays.asList(portaisPos).contains(portalEntrada)) {
-	        for (int i = 0; i < portais.size(); i++) {
-	            Object a = portais.get(i);
-	            Point2D posSaida = ((Teleporte) a).getTpSaida().getPosition();
-	            Direction d = Direction.directionFor(key);
+		if (Arrays.asList(portaisPos).contains(portalEntrada)) {
+			for (int i = 0; i < portais.size(); i++) {
+				Object a = portais.get(i);
+				Point2D posSaida = ((Teleporte) a).getTpSaida().getPosition();
+				Direction d = Direction.directionFor(key);
 				Point2D posObjAtSaida = posSaida.plus(d.asVector());
-	            
 
-	            if (a instanceof Teleporte && ((Teleporte) a).getPosition().equals(portalEntrada)) {
-	                if (!((Teleporte) a).isSomethingOnTop(posSaida, this)) {
-	                    // Teleport the object to the exit teleporter position
-	                	if (teleportableObject instanceof Caixote) {
-	                        moveCaixote(teleportableObject.getPosition(),posObjAtSaida);
-	                    }
-	                    if (teleportableObject instanceof Palete) {
-	                        movePalete(teleportableObject.getPosition(),posObjAtSaida);
-	                    }
-	                    break;
-	                }
-	            }
-	        }
-	    }
+				if (a instanceof Teleporte && ((Teleporte) a).getPosition().equals(portalEntrada)) {
+					if (!((Teleporte) a).isSomethingOnTop(posSaida, this)) {
+						
+						if (teleportableObject instanceof Caixote) {
+							moveCaixote(teleportableObject.getPosition(), posObjAtSaida);
+						}
+						if (teleportableObject instanceof Palete) {
+							movePalete(teleportableObject.getPosition(), posObjAtSaida);
+						}
+						break;
+					}
+				}
+			}
+		}
 	}
 }
